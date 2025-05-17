@@ -1,1 +1,124 @@
-<!DOCTYPE html>  <html lang="en">   <head>     <meta charset="UTF-8">     <title>เกมเรียงตัวเลข</title>     <style>       body {         font-family: sans-serif;         text-align: center;         background: #f0f0f0;       }       #game {         display: grid;         gap: 10px;         justify-content: center;         margin-top: 20px;       }       .tile {         width: 60px;         height: 60px;         font-size: 24px;         background: #4CAF50;         color: white;         display: flex;         align-items: center;         justify-content: center;         cursor: pointer;         border-radius: 8px;       }       #timer, #level {         margin-top: 20px;         font-size: 20px;       }     </style>   </head>   <body>     <h1>เกมเรียงตัวเลข</h1>     <div id="level">เลเวล: 1</div>     <div id="timer">เวลา: 60 วินาที</div>     <div id="game"></div>    <script>       let level = 1;       let time = 60;       let interval;          const gameEl = document.getElementById("game");       const timerEl = document.getElementById("timer");       const levelEl = document.getElementById("level");          function startGame() {         gameEl.innerHTML = "";         let size = level + 2;         gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;            let numbers = [];         for (let i = 1; i <= size * size; i++) {           numbers.push(i);         }         numbers = numbers.sort(() => Math.random() - 0.5);            numbers.forEach(num => {           const tile = document.createElement("div");           tile.className = "tile";           tile.textContent = num;           tile.onclick = () => checkNumber(num, tile);           gameEl.appendChild(tile);         });            expected = 1;       }          let expected = 1;          function checkNumber(num, tile) {         if (num === expected) {           tile.style.background = "#2196F3";           expected++;           if (expected > levelPlus()) {             level++;             levelEl.textContent = `เลเวล: ${level}`;             startGame();           }         }       }          function levelPlus() {         let size = level + 2;         return size * size;       }          function startTimer() {         interval = setInterval(() => {           time--;           timerEl.textContent = `เวลา: ${time} วินาที`;           if (time <= 0) {             clearInterval(interval);             alert("หมดเวลา! คะแนนของคุณ: เลเวล " + level);             level = 1;             time = 60;             levelEl.textContent = `เลเวล: ${level}`;             startGame();             startTimer();           }         }, 1000);       }          startGame();       startTimer();     </script>  </body>   </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ຫາເລກຕາມລຳດັບ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+    }
+    #game {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .tile {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      background: #4CAF50;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 8px;
+      user-select: none;
+    }
+    #timer, #level {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>เกมเรียงตัวเลข</h1>
+  <div id="level">เลเวล: 1</div>
+  <div id="timer">เวลา: 60 วินาที</div>
+  <div id="controls">
+    <button onclick="startGame()">เริ่มเกม</button>
+    <button onclick="resetGame()">รีเซ็ตเกม</button>
+  </div>
+  <div id="game"></div>
+
+  <script>
+    let level = 1;
+    let time = 60;
+    let interval;
+    let expected = 1;
+
+    const gameEl = document.getElementById("game");
+    const timerEl = document.getElementById("timer");
+    const levelEl = document.getElementById("level");
+
+    function startGame() {
+      clearInterval(interval);
+      expected = 1;
+      let size = level + 2;
+      let totalTiles = size * size;
+      time = 60 + (level - 1) * 5;
+      timerEl.textContent = `เวลา: ${time} วินาที`;
+      gameEl.innerHTML = "";
+      gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+
+      let numbers = Array.from({ length: totalTiles }, (_, i) => i + 1);
+      numbers.sort(() => Math.random() - 0.5);
+
+      numbers.forEach(num => {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.textContent = num;
+        tile.addEventListener("mousedown", () => checkNumber(num, tile));
+        gameEl.appendChild(tile);
+      });
+
+      startTimer();
+    }
+
+    function checkNumber(num, tile) {
+      if (num === expected) {
+        tile.style.background = "#2196F3";
+        expected++;
+        if (expected > (level + 2) * (level + 2)) {
+          level++;
+          levelEl.textContent = `เลเวล: ${level}`;
+          setTimeout(startGame, 200);
+        }
+      }
+    }
+
+    function startTimer() {
+      interval = setInterval(() => {
+        time--;
+        timerEl.textContent = `เวลา: ${time} วินาที`;
+        if (time <= 0) {
+          clearInterval(interval);
+          alert("หมดเวลา! คะแนนของคุณ: เลเวล " + level);
+        }
+      }, 1000);
+    }
+
+    function resetGame() {
+      clearInterval(interval);
+      level = 1;
+      time = 60;
+      expected = 1;
+      timerEl.textContent = `เวลา: ${time} วินาที`;
+      levelEl.textContent = `เลเวล: ${level}`;
+      gameEl.innerHTML = "";
+    }
+  </script>
+</body>
+</html>
