@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ຫາເລກຕາມລຳດັບ</title>
+  <title>เกมเรียงตัวเลข</title>
   <style>
     body {
       font-family: sans-serif;
@@ -27,9 +27,13 @@
       cursor: pointer;
       border-radius: 8px;
       user-select: none;
+      transition: background 0.1s ease;
     }
-    #timer, #level {
-      margin-top: 20px;
+    .disabled {
+      pointer-events: none;
+    }
+    #timer, #level, #score, #highScore {
+      margin-top: 10px;
       font-size: 20px;
     }
     #controls {
@@ -41,35 +45,78 @@
       margin: 5px;
       cursor: pointer;
     }
+    #feedback {
+      margin-top: 20px;
+      font-size: 28px;
+      height: 40px;
+      color: red;
+    }
   </style>
 </head>
 <body>
   <h1>เกมเรียงตัวเลข</h1>
   <div id="level">เลเวล: 1</div>
   <div id="timer">เวลา: 60 วินาที</div>
+  <div id="score">คะแนน: 0</div>
+  <div id="highScore">คะแนนสูงสุด: 0</div>
   <div id="controls">
     <button onclick="startGame()">เริ่มเกม</button>
     <button onclick="resetGame()">รีเซ็ตเกม</button>
   </div>
   <div id="game"></div>
+  <div id="feedback"></div>
+
+  <audio id="wrongSound" src="https://www.soundjay.com/button/sounds/button-10.mp3" preload="auto"></audio>
 
   <script>
     let level = 1;
     let time = 60;
     let interval;
     let expected = 1;
+    let score = 0;
+    let wrongCount = 0;
+    const maxWrong = 3;
+
+    let highScore = parseInt(localStorage.getItem("highScore")) || 0;
 
     const gameEl = document.getElementById("game");
     const timerEl = document.getElementById("timer");
     const levelEl = document.getElementById("level");
+    const scoreEl = document.getElementById("score");
+    const highScoreEl = document.getElementById("highScore");
+    const feedbackEl = document.getElementById("feedback");
+    const wrongSound = document.getElementById("wrongSound");
+
+    const emojis = ["😡", "🤯", "😤", "😵‍💫", "🙃", "😬", "😑", "🤬", "🫠"];
+
+    function updateHighScore() {
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+        highScoreEl.textContent = `คะแนนสูงสุด: ${highScore}`;
+      }
+    }
+
+    function showFeedback() {
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      feedbackEl.textContent = `ผิดแล้ว! ${emoji}`;
+      setTimeout(() => {
+        feedbackEl.textContent = "";
+      }, 1200);
+    }
 
     function startGame() {
       clearInterval(interval);
       expected = 1;
+      wrongCount = 0;
       let size = level + 2;
       let totalTiles = size * size;
       time = 60 + (level - 1) * 5;
+      score = (level - 1) * 100;
       timerEl.textContent = `เวลา: ${time} วินาที`;
+      levelEl.textContent = `เลเวล: ${level}`;
+      scoreEl.textContent = `คะแนน: ${score}`;
+      highScoreEl.textContent = `คะแนนสูงสุด: ${highScore}`;
       gameEl.innerHTML = "";
       gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
 
@@ -80,7 +127,7 @@
         const tile = document.createElement("div");
         tile.className = "tile";
         tile.textContent = num;
-        tile.addEventListener("mousedown", () => checkNumber(num, tile));
+        tile.addEventListener("click", () => checkNumber(num, tile));
         gameEl.appendChild(tile);
       });
 
@@ -88,14 +135,42 @@
     }
 
     function checkNumber(num, tile) {
+      if (tile.classList.contains("disabled")) return;
+
       if (num === expected) {
         tile.style.background = "#2196F3";
+        tile.classList.add("disabled");
         expected++;
+        score += 10;
+        scoreEl.textContent = `คะแนน: ${score}`;
         if (expected > (level + 2) * (level + 2)) {
           level++;
           levelEl.textContent = `เลเวล: ${level}`;
-          setTimeout(startGame, 200);
+          startGame();
         }
+      } else {
+        tile.style.background = "#f44336";
+        tile.classList.add("disabled");
+        wrongCount++;
+        if (navigator.vibrate) navigator.vibrate(200);
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+        showFeedback();
+
+        if (wrongCount >= maxWrong) {
+          clearInterval(interval);
+          setTimeout(() => {
+            updateHighScore();
+            alert(`คุณกดผิดมากเกินไป!\nคะแนนของคุณ: ${score}\nเลเวลที่ถึง: ${level}`);
+            resetGame();
+          }, 300);
+          return;
+        }
+
+        setTimeout(() => {
+          tile.style.background = "#4CAF50";
+          tile.classList.remove("disabled");
+        }, 300);
       }
     }
 
@@ -105,7 +180,9 @@
         timerEl.textContent = `เวลา: ${time} วินาที`;
         if (time <= 0) {
           clearInterval(interval);
-          alert("หมดเวลา! คะแนนของคุณ: เลเวล " + level);
+          updateHighScore();
+          alert(`หมดเวลา!\nคะแนนของคุณ: ${score}\nเลเวลที่ถึง: ${level}`);
+          resetGame();
         }
       }, 1000);
     }
@@ -115,9 +192,14 @@
       level = 1;
       time = 60;
       expected = 1;
+      score = 0;
+      wrongCount = 0;
       timerEl.textContent = `เวลา: ${time} วินาที`;
       levelEl.textContent = `เลเวล: ${level}`;
+      scoreEl.textContent = `คะแนน: ${score}`;
+      highScoreEl.textContent = `คะแนนสูงสุด: ${highScore}`;
       gameEl.innerHTML = "";
+      feedbackEl.textContent = "";
     }
   </script>
 </body>
